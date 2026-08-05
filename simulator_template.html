@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mismatch Simulator — the epigenetic trap</title>
+<style>
+  :root{
+    color-scheme: light;
+    --page:#f9f9f7; --surface-1:#fcfcfb; --surface-2:#f3f2ee;
+    --ink:#0b0b0b; --ink-2:#52514e; --muted:#898781;
+    --grid:#e1e0d9; --axis:#c3c2b7; --border:rgba(11,11,11,0.10);
+    --env:#52514e; --mem:#2a78d6; --fit:#1baf7a; --null:#c3c2b7;
+    --pos:#2a78d6; --neg:#eb6834; --warnbg:#fff6e8; --warnbd:#eda100;
+    --good:#0ca30c; --crit:#d03b3b;
+  }
+  :root[data-theme="dark"]{
+    color-scheme: dark;
+    --page:#0d0d0d; --surface-1:#1a1a19; --surface-2:#222220;
+    --ink:#ffffff; --ink-2:#c3c2b7; --muted:#898781;
+    --grid:#2c2c2a; --axis:#4a4a46; --border:rgba(255,255,255,0.10);
+    --env:#c3c2b7; --mem:#3987e5; --fit:#199e70; --null:#5a5954;
+    --pos:#3987e5; --neg:#d95926; --warnbg:#2a2110; --warnbd:#c98500;
+    --good:#0ca30c; --crit:#e66767;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--page);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;font-size:14px;line-height:1.5}
+  .wrap{max-width:1340px;margin:0 auto;padding:26px 22px 70px}
+  header{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;margin-bottom:8px}
+  h1{font-size:26px;margin:0 0 4px;letter-spacing:-0.02em}
+  .sub{color:var(--ink-2);font-size:13.5px;margin:0;max-width:80ch}
+  .toggle{background:var(--surface-1);border:1px solid var(--border);border-radius:8px;color:var(--ink-2);padding:7px 12px;font-size:12.5px;cursor:pointer;font-family:inherit;white-space:nowrap}
+  .toggle:hover{color:var(--ink)}
+  .toybox{margin:16px 0 20px;padding:11px 14px;background:var(--warnbg);border:1px solid var(--warnbd);border-left:3px solid var(--warnbd);border-radius:8px;color:var(--ink-2);font-size:12.5px;max-width:104ch}
+  .toybox b{color:var(--ink)}
+  .layout{display:grid;grid-template-columns:288px 1fr;gap:18px;align-items:start}
+  @media (max-width:980px){.layout{grid-template-columns:1fr}}
+  .panel{background:var(--surface-1);border:1px solid var(--border);border-radius:12px;padding:15px 16px}
+  .panel h2{font-size:13px;margin:0 0 10px;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);font-weight:600}
+  .ctl{margin-bottom:13px}
+  .ctl-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+  .ctl label{font-size:12.5px;color:var(--ink-2)}
+  .ctl .val{font-size:12px;font-variant-numeric:tabular-nums;color:var(--ink);font-weight:600}
+  .ctl input[type=range]{width:100%;margin:5px 0 0;accent-color:var(--mem)}
+  .ctl .hint{font-size:10.5px;color:var(--muted);margin-top:1px}
+  select{width:100%;font-family:inherit;font-size:12.5px;padding:6px 8px;border-radius:7px;border:1px solid var(--border);background:var(--surface-2);color:var(--ink);margin-bottom:6px}
+  .presetnote{font-size:11px;color:var(--muted);line-height:1.45;margin:6px 0 2px}
+  .verdict{padding:12px 14px;border-radius:10px;margin-bottom:14px;border:1px solid var(--border)}
+  .verdict.safe{background:rgba(42,120,214,0.09);border-color:var(--pos)}
+  .verdict.trap{background:rgba(235,104,52,0.10);border-color:var(--neg)}
+  .verdict .vhead{font-size:15px;font-weight:700;margin-bottom:3px}
+  .verdict.safe .vhead{color:var(--pos)}
+  .verdict.trap .vhead{color:var(--neg)}
+  .verdict .vbody{font-size:12.5px;color:var(--ink-2)}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:9px;margin-bottom:14px}
+  .stat{background:var(--surface-2);border:1px solid var(--border);border-radius:9px;padding:9px 11px}
+  .stat .k{font-size:9.5px;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);font-weight:600}
+  .stat .v{font-size:19px;font-variant-numeric:tabular-nums;margin-top:3px;letter-spacing:-0.01em}
+  .chartcard{background:var(--surface-1);border:1px solid var(--border);border-radius:12px;padding:14px 16px 12px;margin-bottom:16px}
+  .chartcard h3{font-size:14px;margin:0 0 2px}
+  .chartcard .cap{font-size:12px;color:var(--ink-2);margin:0 0 10px;max-width:96ch}
+  canvas{width:100%;display:block}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:var(--ink-2);margin-top:8px}
+  .legend span{display:inline-flex;align-items:center;gap:5px}
+  .sw{width:16px;height:3px;border-radius:2px;display:inline-block}
+  .swbox{width:11px;height:11px;border-radius:3px;display:inline-block}
+  .anchors{font-size:11px;color:var(--muted);margin-top:9px;line-height:1.5}
+  .anchors b{color:var(--ink-2);font-weight:600}
+  footer{color:var(--muted);font-size:11.5px;margin-top:24px;max-width:108ch;line-height:1.6}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:0.92em;background:var(--surface-2);padding:1px 4px;border-radius:4px}
+  .btnrow{display:flex;gap:7px;margin-top:9px}
+  .btn{flex:1;background:var(--surface-2);border:1px solid var(--border);border-radius:7px;color:var(--ink-2);padding:6px 8px;font-size:11.5px;cursor:pointer;font-family:inherit}
+  .btn:hover{color:var(--ink);border-color:var(--axis)}
+  .busy{opacity:0.45;transition:opacity .12s}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div>
+    <h1>Mismatch Simulator</h1>
+    <p class="sub">The epigenetic trap, made explicit. When does anticipatory environmental memory stop paying for itself and start costing more than it returns? Framework Question&nbsp;8, as a model you can push on.</p>
+  </div>
+  <button class="toggle" id="tt">Dark mode</button>
+</header>
+
+<div class="toybox">
+  <b>This is a toy model.</b> Its parameter <i>ranges</i> are anchored to real persistence measurements from the Conditioning Atlas (109 extracted experiments); its <i>functional forms</i> are assumptions chosen to be interpretable, not derived from marine invertebrate physiology and not fitted to any dataset. It exists to sharpen the question and generate testable predictions. No number it produces should appear in a manuscript as a result. See <code>MODEL.md</code> for the full specification and limitations.
+</div>
+
+<div class="layout">
+  <div>
+    <div class="panel" style="margin-bottom:16px">
+      <h2>Scenario</h2>
+      <select id="preset"></select>
+      <div class="presetnote" id="presetNote"></div>
+      <div class="btnrow">
+        <button class="btn" id="btnReset">Reset</button>
+        <button class="btn" id="btnReseed">New noise draw</button>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>Parameters</h2>
+      <div id="controls"></div>
+    </div>
+  </div>
+
+  <div>
+    <div id="verdict" class="verdict safe">
+      <div class="vhead" id="verdictHead"></div>
+      <div class="vbody" id="verdictBody"></div>
+    </div>
+
+    <div class="stats" id="stats"></div>
+
+    <div class="chartcard">
+      <h3>One lineage through time</h3>
+      <p class="cap">Environment, the induced memory state it drives, and the resulting performance — against the same lineage carrying no memory at all, experiencing the identical environmental sequence.</p>
+      <canvas id="tsCanvas" height="300"></canvas>
+      <div class="legend">
+        <span><i class="sw" style="background:var(--env)"></i>Environment E(t)</span>
+        <span><i class="sw" style="background:var(--mem)"></i>Memory state M(t)</span>
+        <span><i class="sw" style="background:var(--fit)"></i>Performance, with memory</span>
+        <span><i class="sw" style="background:var(--null);height:0;border-top:2px dashed var(--null)"></i>Performance, no memory</span>
+      </div>
+    </div>
+
+    <div class="chartcard">
+      <h3>Where the trap is</h3>
+      <p class="cap">Advantage of having memory across rate of change &times; memory half-life, at the current settings for every other parameter. Blue means memory pays for itself; orange means the lineage would do better with no environmental memory at all. The black line is the trap boundary. Horizontal markers show where real Conditioning Atlas studies sit on the half-life axis — remembering that those are censored bounds, not measurements.</p>
+      <canvas id="phaseCanvas" height="340"></canvas>
+      <div class="legend">
+        <span><i class="swbox" style="background:var(--pos)"></i>Memory pays</span>
+        <span><i class="swbox" style="background:var(--neg)"></i>Trapped</span>
+        <span><i class="sw" style="background:var(--ink)"></i>Trap boundary</span>
+        <span><i class="swbox" style="background:transparent;border:2px solid var(--ink)"></i>Current settings</span>
+      </div>
+      <div class="anchors" id="anchorNote"></div>
+    </div>
+  </div>
+</div>
+
+<footer id="foot"></footer>
+</div>
+
+<script>
+"use strict";
+const CONFIG = __DATA__;
+
+/* ===================================================================
+   MODEL — must stay numerically identical to model/mismatch.py.
+   scripts/crossvalidate_js.py compares the two over a parameter grid
+   and fails the build on any divergence. If you edit this block, edit
+   the Python alongside it and re-run that script.
+   =================================================================== */
+
+function Mulberry32(seed){ this.a = seed >>> 0; }
+Mulberry32.prototype.random = function(){
+  this.a = (this.a + 0x6D2B79F5) >>> 0;
+  let a = this.a;
+  let t = Math.imul(a ^ (a >>> 15), 1 | a) >>> 0;
+  t = (((t + Math.imul(t ^ (t >>> 7), 61 | t)) >>> 0) ^ t) >>> 0;
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+};
+Mulberry32.prototype.normal = function(){
+  let u1 = this.random();
+  if (u1 < 1e-12) u1 = 1e-12;
+  const u2 = this.random();
+  return Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+};
+
+const M_MAX = 1.0;
+
+function simulate(p, seed, keepSeries){
+  const nDays = Math.round(p.years * 365);
+  const decayK = Math.LN2 / p.half_life;
+  const trendDaily = p.trend / 365;
+  const twoWSq = 2 * p.tolerance_width * p.tolerance_width;
+  const genDays = Math.round(p.generation_days);
+  const applyGen = genDays > 0;
+
+  const rng = new Mulberry32(seed);
+  let memory = 0, sumW = 0, sumWN = 0, sumLogW = 0, sumLogWN = 0;
+  let sumMis = 0, peak = 0;
+  const lateStart = Math.floor(nDays * 0.8);
+  let lateW = 0, lateWN = 0, lateN = 0;
+
+  const st = keepSeries ? new Float64Array(nDays) : null;
+  const se = keepSeries ? new Float64Array(nDays) : null;
+  const sm = keepSeries ? new Float64Array(nDays) : null;
+  const sw = keepSeries ? new Float64Array(nDays) : null;
+  const sn = keepSeries ? new Float64Array(nDays) : null;
+
+  for (let i = 0; i < nDays; i++){
+    const t = i;
+    const env = trendDaily * t
+              + p.seasonal_amplitude * Math.sin(2 * Math.PI * t / 365)
+              + p.noise * rng.normal();
+
+    const prepared = p.gain * memory;
+    const delta = env - prepared;
+    const w = Math.exp(-(delta * delta) / twoWSq) * Math.exp(-p.cost * memory);
+    const wn = Math.exp(-(env * env) / twoWSq);
+
+    sumW += w; sumWN += wn;
+    sumLogW += Math.log(Math.max(w, 1e-300));
+    sumLogWN += Math.log(Math.max(wn, 1e-300));
+    sumMis += Math.abs(delta);
+    if (memory > peak) peak = memory;
+    if (i >= lateStart){ lateW += w; lateWN += wn; lateN++; }
+
+    if (keepSeries){ st[i] = t; se[i] = env; sm[i] = memory; sw[i] = w; sn[i] = wn; }
+
+    let drive = env - p.threshold;
+    if (drive < 0) drive = 0;
+    memory += p.induction_rate * drive * (1 - memory / M_MAX) - decayK * memory;
+    if (memory < 0) memory = 0; else if (memory > M_MAX) memory = M_MAX;
+
+    if (applyGen && ((i + 1) % genDays === 0)) memory *= p.inheritance;
+  }
+
+  const n = nDays, ln = lateN > 0 ? lateN : 1;
+  const meanW = sumW / n, meanWN = sumWN / n;
+  const summary = {
+    n_days: nDays,
+    mean_fitness: meanW, mean_fitness_null: meanWN,
+    advantage: meanW - meanWN,
+    late_fitness: lateW / ln, late_fitness_null: lateWN / ln,
+    late_advantage: (lateW / ln) - (lateWN / ln),
+    geo_mean_fitness: Math.exp(sumLogW / n),
+    geo_mean_fitness_null: Math.exp(sumLogWN / n),
+    geo_advantage: Math.exp(sumLogW / n) - Math.exp(sumLogWN / n),
+    mean_abs_mismatch: sumMis / n,
+    peak_memory: peak,
+    trapped: (meanW - meanWN) < 0
+  };
+  return keepSeries
+    ? {summary, series:{t:st, environment:se, memory:sm, fitness:sw, fitness_null:sn}}
+    : {summary};
+}
+
+function advantageOf(p, seed){ return simulate(p, seed, false).summary.advantage; }
+
+/* =================================================================== */
+
+const PARAMS = CONFIG.parameters;
+const PRESETS = CONFIG.presets;
+const DEFAULT_PRESET = "coral_long";
+let state = {};
+let seed = 42;
+let phaseCache = null;
+
+function loadPreset(id){
+  const pre = PRESETS.find(p => p.id === id) || PRESETS[0];
+  state = Object.assign({}, pre.values);
+  document.getElementById("presetNote").textContent = pre.anchor_note || "";
+  syncControls();
+}
+
+/* ---------- controls ---------- */
+const ORDER = ["trend","half_life","seasonal_amplitude","noise","induction_rate",
+               "threshold","gain","cost","tolerance_width","inheritance",
+               "generation_days","years"];
+
+function fmt(key, v){
+  const step = PARAMS[key].step;
+  const dec = step >= 1 ? 0 : (step >= 0.05 ? 2 : 3);
+  return v.toFixed(dec);
+}
+
+function buildControls(){
+  const host = document.getElementById("controls");
+  host.innerHTML = ORDER.map(key => {
+    const d = PARAMS[key];
+    return `<div class="ctl">
+      <div class="ctl-top">
+        <label for="c_${key}">${d.label}</label>
+        <span class="val" id="v_${key}"></span>
+      </div>
+      <input type="range" id="c_${key}" min="${d.min}" max="${d.max}" step="${d.step}">
+      <div class="hint">${d.unit}</div>
+    </div>`;
+  }).join("");
+  ORDER.forEach(key => {
+    document.getElementById("c_" + key).addEventListener("input", e => {
+      state[key] = parseFloat(e.target.value);
+      document.getElementById("v_" + key).textContent = fmt(key, state[key]);
+      phaseCache = null;
+      scheduleRender();
+    });
+  });
+}
+
+function syncControls(){
+  ORDER.forEach(key => {
+    document.getElementById("c_" + key).value = state[key];
+    document.getElementById("v_" + key).textContent = fmt(key, state[key]);
+  });
+  phaseCache = null;
+  scheduleRender();
+}
+
+/* ---------- canvas helpers ---------- */
+function setupCanvas(cv, cssHeight){
+  const dpr = window.devicePixelRatio || 1;
+  const w = cv.clientWidth;
+  cv.width = Math.round(w * dpr);
+  cv.height = Math.round(cssHeight * dpr);
+  cv.style.height = cssHeight + "px";
+  const ctx = cv.getContext("2d");
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return {ctx, w, h: cssHeight};
+}
+function cssVar(n){ return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+
+/* ---------- time-series chart ---------- */
+function drawTimeSeries(res){
+  const cv = document.getElementById("tsCanvas");
+  const {ctx, w, h} = setupCanvas(cv, 300);
+  ctx.clearRect(0, 0, w, h);
+
+  const L = 46, R = 12, T = 10, B = 28;
+  const pw = w - L - R, ph = h - T - B;
+  const s = res.series, n = s.t.length;
+
+  let eMin = Infinity, eMax = -Infinity;
+  for (let i = 0; i < n; i++){ if (s.environment[i] < eMin) eMin = s.environment[i]; if (s.environment[i] > eMax) eMax = s.environment[i]; }
+  const pad = (eMax - eMin) * 0.08 || 1;
+  eMin -= pad; eMax += pad;
+
+  const x = i => L + (i / (n - 1)) * pw;
+  const yE = v => T + ph * 0.52 * (1 - (v - eMin) / (eMax - eMin));
+  const fitTop = T + ph * 0.60, fitH = ph * 0.40;
+  const yF = v => fitTop + fitH * (1 - v);
+
+  // grid: year lines
+  ctx.strokeStyle = cssVar("--grid"); ctx.lineWidth = 1;
+  ctx.fillStyle = cssVar("--muted"); ctx.font = "10px system-ui"; ctx.textAlign = "center";
+  const years = Math.round(n / 365);
+  const stepY = years > 16 ? 5 : (years > 8 ? 2 : 1);
+  for (let yr = 0; yr <= years; yr += stepY){
+    const px = x(Math.min(yr * 365, n - 1));
+    ctx.beginPath(); ctx.moveTo(px, T); ctx.lineTo(px, T + ph); ctx.stroke();
+    ctx.fillText(yr + "y", px, h - 9);
+  }
+
+  // zero line for environment
+  if (eMin < 0 && eMax > 0){
+    ctx.strokeStyle = cssVar("--axis"); ctx.setLineDash([3,3]);
+    ctx.beginPath(); ctx.moveTo(L, yE(0)); ctx.lineTo(L + pw, yE(0)); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  const stride = Math.max(1, Math.floor(n / 1400));
+  function line(arr, mapY, color, width, dash){
+    ctx.strokeStyle = color; ctx.lineWidth = width;
+    ctx.setLineDash(dash || []);
+    ctx.beginPath();
+    for (let i = 0; i < n; i += stride){
+      const px = x(i), py = mapY(arr[i]);
+      if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.stroke(); ctx.setLineDash([]);
+  }
+
+  line(s.environment, yE, cssVar("--env"), 1.1);
+  // memory drawn on the environment panel, scaled to its own 0..1 range
+  const yM = v => T + ph * 0.52 * (1 - v);
+  line(s.memory, yM, cssVar("--mem"), 1.8);
+  line(s.fitness_null, yF, cssVar("--null"), 1.4, [4,3]);
+  line(s.fitness, yF, cssVar("--fit"), 1.8);
+
+  // axes labels
+  ctx.fillStyle = cssVar("--muted"); ctx.font = "10px system-ui"; ctx.textAlign = "right";
+  ctx.fillText(eMax.toFixed(1), L - 6, yE(eMax) + 3);
+  ctx.fillText(eMin.toFixed(1), L - 6, yE(eMin) + 3);
+  ctx.fillText("1.0", L - 6, yF(1) + 3);
+  ctx.fillText("0", L - 6, yF(0) + 3);
+  ctx.save();
+  ctx.translate(11, T + ph * 0.26); ctx.rotate(-Math.PI / 2);
+  ctx.textAlign = "center"; ctx.fillText("stress / memory", 0, 0); ctx.restore();
+  ctx.save();
+  ctx.translate(11, fitTop + fitH / 2); ctx.rotate(-Math.PI / 2);
+  ctx.textAlign = "center"; ctx.fillText("performance", 0, 0); ctx.restore();
+}
+
+/* ---------- phase diagram ---------- */
+const NX = 44, NY = 30;
+
+function computePhase(){
+  const xs = [], ys = [];
+  const xMax = PARAMS.trend.max;
+  for (let i = 0; i < NX; i++) xs.push((i / (NX - 1)) * xMax);
+  const yLo = 3, yHi = PARAMS.half_life.max;
+  for (let j = 0; j < NY; j++) ys.push(yLo * Math.pow(yHi / yLo, j / (NY - 1)));
+
+  const grid = [];
+  let lo = Infinity, hi = -Infinity;
+  for (let j = 0; j < NY; j++){
+    const row = new Float64Array(NX);
+    for (let i = 0; i < NX; i++){
+      const q = Object.assign({}, state, {trend: xs[i], half_life: ys[j]});
+      const a = advantageOf(q, seed);
+      row[i] = a;
+      if (a < lo) lo = a; if (a > hi) hi = a;
+    }
+    grid.push(row);
+  }
+  return {xs, ys, grid, lo, hi};
+}
+
+function divergingColor(v, scale){
+  // v>0 -> blue (memory pays); v<0 -> orange (trap)
+  const t = Math.max(-1, Math.min(1, v / scale));
+  const light = document.documentElement.getAttribute("data-theme") !== "dark";
+  const bg = light ? [252,252,251] : [26,26,25];
+  const pos = light ? [42,120,214] : [57,135,229];
+  const neg = light ? [235,104,52] : [217,89,38];
+  const target = t >= 0 ? pos : neg;
+  const m = Math.pow(Math.abs(t), 0.62);
+  return `rgb(${Math.round(bg[0]+(target[0]-bg[0])*m)},${Math.round(bg[1]+(target[1]-bg[1])*m)},${Math.round(bg[2]+(target[2]-bg[2])*m)})`;
+}
+
+function drawPhase(){
+  const cv = document.getElementById("phaseCanvas");
+  const {ctx, w, h} = setupCanvas(cv, 340);
+  ctx.clearRect(0, 0, w, h);
+
+  if (!phaseCache) phaseCache = computePhase();
+  const {xs, ys, grid, lo, hi} = phaseCache;
+
+  const L = 58, R = 172, T = 12, B = 36;
+  const pw = w - L - R, ph = h - T - B;
+  const scale = Math.max(Math.abs(lo), Math.abs(hi)) || 1;
+
+  const cw = pw / NX, chh = ph / NY;
+  const px = i => L + (i / (NX - 1)) * pw;
+  const logLo = Math.log(ys[0]), logHi = Math.log(ys[NY - 1]);
+  const pyLog = v => T + ph * (1 - (Math.log(v) - logLo) / (logHi - logLo));
+
+  for (let j = 0; j < NY; j++){
+    for (let i = 0; i < NX; i++){
+      ctx.fillStyle = divergingColor(grid[j][i], scale);
+      ctx.fillRect(L + i * cw - 0.5, T + ph - (j + 1) * chh - 0.5, cw + 1, chh + 1);
+    }
+  }
+
+  // trap boundary: per column, find sign change across rows
+  ctx.strokeStyle = cssVar("--ink"); ctx.lineWidth = 2;
+  ctx.beginPath();
+  let started = false;
+  for (let i = 0; i < NX; i++){
+    let cross = null;
+    for (let j = 0; j < NY - 1; j++){
+      const a = grid[j][i], b = grid[j + 1][i];
+      if ((a >= 0) !== (b >= 0)){
+        const f = a / (a - b);
+        cross = Math.exp(Math.log(ys[j]) + f * (Math.log(ys[j + 1]) - Math.log(ys[j])));
+        break;
+      }
+    }
+    if (cross === null){ started = false; continue; }
+    const X = px(i), Y = pyLog(cross);
+    if (!started){ ctx.moveTo(X, Y); started = true; } else ctx.lineTo(X, Y);
+  }
+  ctx.stroke();
+
+  // current-settings marker
+  const cx = L + (state.trend / PARAMS.trend.max) * pw;
+  const cy = pyLog(Math.max(ys[0], Math.min(ys[NY - 1], state.half_life)));
+  ctx.strokeStyle = cssVar("--ink"); ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(cx, cy, 5.5, 0, Math.PI * 2); ctx.stroke();
+  ctx.fillStyle = cssVar("--surface-1");
+  ctx.beginPath(); ctx.arc(cx, cy, 2.2, 0, Math.PI * 2); ctx.fill();
+
+  // axes
+  ctx.fillStyle = cssVar("--muted"); ctx.font = "10px system-ui";
+  ctx.textAlign = "center";
+  for (let k = 0; k <= 4; k++){
+    const v = (k / 4) * PARAMS.trend.max;
+    ctx.fillText(v.toFixed(1), L + (k / 4) * pw, h - 20);
+  }
+  ctx.fillText("rate of environmental change (units/year)", L + pw / 2, h - 6);
+  ctx.textAlign = "right";
+  [3, 10, 30, 100, 300].forEach(v => {
+    if (v < ys[0] || v > ys[NY - 1]) return;
+    ctx.fillText(String(v), L - 7, pyLog(v) + 3);
+  });
+  ctx.save(); ctx.translate(13, T + ph / 2); ctx.rotate(-Math.PI / 2);
+  ctx.textAlign = "center"; ctx.fillText("memory half-life (days, log)", 0, 0); ctx.restore();
+
+  // atlas anchors along the right edge
+  const anchors = [
+    {d: 8,   t: "Glass 2023 · decayed by 8 d"},
+    {d: 28,  t: "Hazraty-Kari 2023 · decayed"},
+    {d: 124, t: "Drury 2022 · still present"},
+    {d: 156, t: "Lafont 2017b · still present"},
+    {d: 365, t: "Wong 2021 · still present"},
+    {d: 426, t: "Parker 2015 · still present"}
+  ];
+  ctx.textAlign = "left"; ctx.font = "9.5px system-ui";
+  let lastY = -99;
+  anchors.forEach(a => {
+    if (a.d < ys[0] || a.d > ys[NY - 1]) return;
+    let y = pyLog(a.d);
+    if (Math.abs(y - lastY) < 11) y = lastY + 11;
+    lastY = y;
+    ctx.strokeStyle = cssVar("--axis"); ctx.lineWidth = 1;
+    ctx.setLineDash([2, 2]);
+    ctx.beginPath(); ctx.moveTo(L + pw, pyLog(a.d)); ctx.lineTo(L + pw + 7, y); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = cssVar("--muted");
+    ctx.fillText(a.t, L + pw + 10, y + 3);
+  });
+}
+
+/* ---------- readouts ---------- */
+function render(){
+  const res = simulate(state, seed, true);
+  const s = res.summary;
+
+  drawTimeSeries(res);
+  drawPhase();
+
+  const trapped = s.advantage < 0;
+  const vd = document.getElementById("verdict");
+  vd.className = "verdict " + (trapped ? "trap" : "safe");
+  document.getElementById("verdictHead").textContent =
+    trapped ? "Trapped — memory costs more than it returns"
+            : "Memory pays for itself";
+  document.getElementById("verdictBody").textContent = trapped
+    ? `Over ${(s.n_days/365).toFixed(0)} years this lineage does worse carrying an induced state than an identical lineage with no environmental memory at all, in the same environment. Peak induction reached ${(s.peak_memory*100).toFixed(0)}% of maximum.`
+    : `Over ${(s.n_days/365).toFixed(0)} years the induced state returns more than it costs. Peak induction reached ${(s.peak_memory*100).toFixed(0)}% of maximum. Lengthen memory or slow the environment's reversal to find the boundary.`;
+
+  const rows = [
+    ["Advantage", (s.advantage >= 0 ? "+" : "") + s.advantage.toFixed(3), s.advantage >= 0 ? "var(--pos)" : "var(--neg)"],
+    ["Mean performance", s.mean_fitness.toFixed(3), "var(--ink)"],
+    ["Without memory", s.mean_fitness_null.toFixed(3), "var(--ink-2)"],
+    ["Final-fifth advantage", (s.late_advantage >= 0 ? "+" : "") + s.late_advantage.toFixed(3), s.late_advantage >= 0 ? "var(--pos)" : "var(--neg)"],
+    ["Mean mismatch", s.mean_abs_mismatch.toFixed(2), "var(--ink)"]
+  ];
+  document.getElementById("stats").innerHTML = rows.map(([k, v, c]) =>
+    `<div class="stat"><div class="k">${k}</div><div class="v" style="color:${c}">${v}</div></div>`).join("");
+
+  const ev = CONFIG.atlas_evidence.groups["Coral-cnidarian / Temperature"];
+  document.getElementById("anchorNote").innerHTML =
+    `<b>Reading the anchors:</b> "persisted" means the effect was still detectable at the last timepoint tested, so it is a <i>lower</i> bound on half-life, not a measurement; "decayed" means it was substantially gone by then, a rough upper bound. Coral thermal priming alone spans ${ev.earliest_decayed_days}&nbsp;d (${ev.earliest_decayed_study}) to ${ev.longest_persisted_days}&nbsp;d (${ev.longest_persisted_study}) — two orders of magnitude, same taxon, same stressor. Most atlas rows tested a single timepoint, so the decay curves this model assumes are almost entirely unmeasured.`;
+}
+
+let renderTimer = null;
+function scheduleRender(){
+  document.getElementById("phaseCanvas").classList.add("busy");
+  if (renderTimer) clearTimeout(renderTimer);
+  renderTimer = setTimeout(() => {
+    render();
+    document.getElementById("phaseCanvas").classList.remove("busy");
+  }, 90);
+}
+
+/* ---------- wiring ---------- */
+document.getElementById("preset").innerHTML =
+  PRESETS.map(p => `<option value="${p.id}">${p.name}</option>`).join("");
+document.getElementById("preset").addEventListener("change", e => loadPreset(e.target.value));
+document.getElementById("btnReset").addEventListener("click", () => {
+  loadPreset(document.getElementById("preset").value);
+});
+document.getElementById("btnReseed").addEventListener("click", () => {
+  seed = (seed * 1664525 + 1013904223) >>> 0;
+  phaseCache = null;
+  render();
+});
+document.getElementById("tt").addEventListener("click", () => {
+  const dark = document.documentElement.getAttribute("data-theme") === "dark";
+  document.documentElement.setAttribute("data-theme", dark ? "light" : "dark");
+  document.getElementById("tt").textContent = dark ? "Dark mode" : "Light mode";
+  render();
+});
+window.addEventListener("resize", () => { if (renderTimer) clearTimeout(renderTimer); renderTimer = setTimeout(render, 120); });
+
+document.getElementById("foot").innerHTML =
+  `Mismatch Simulator — an interactive artifact for framework Question 8. Parameter ranges are anchored to the Conditioning Atlas (109 extracted conditioning experiments); the model's equations are in <code>MODEL.md</code> and its reference implementation, with a 30-case test suite, is in <code>model/mismatch.py</code>. The JavaScript running in this page is cross-validated against that Python line-for-line by <code>scripts/crossvalidate_js.py</code>. ` +
+  `<b>What the model actually says:</b> under purely monotone directional change, an upward-shifting memory is never worse than no memory — it just becomes progressively less useful as both strategies fail. The trap appears instead when memory outlasts the timescale on which the environment <i>reverses</i>: a state induced by a summer heat pulse is still being paid for in winter. That reframes Q8's "rate of change" as the wrong axis; the controlling quantity is the ratio of memory half-life to environmental reversal time. See <code>README.md</code> for what does and does not support this in the atlas data.`;
+
+buildControls();
+document.getElementById("preset").value = DEFAULT_PRESET;
+loadPreset(DEFAULT_PRESET);
+</script>
+</body>
+</html>

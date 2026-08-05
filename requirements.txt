@@ -1,0 +1,5 @@
+# model/mismatch.py itself needs nothing beyond the Python standard library.
+pytest>=7.0     # tests/
+scipy>=1.10     # scripts/atlas_signal_check.py only
+# scripts/crossvalidate_js.py additionally needs node + `npm i playwright`
+# and a Chromium binary (this environment ships one at /opt/pw-browsers/chromium).

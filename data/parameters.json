@@ -1,0 +1,200 @@
+{
+  "_comment": "Parameter ranges and preset scenarios for the Mismatch Simulator. Persistence anchors are derived from the Conditioning Atlas (109 extracted experiments; see ../README.md for the provenance chain). Generated once by hand from atlas/merged.json and then maintained here — see scripts/refresh_atlas_anchors.py to recompute the evidence block.",
+  "units": {
+    "time": "days",
+    "stress": "stress units; for thermal scenarios read 1 unit = 1 degree C above the local baseline"
+  },
+
+  "parameters": {
+    "trend": {
+      "label": "Rate of environmental change",
+      "unit": "stress units per year",
+      "min": 0.0,
+      "max": 2.0,
+      "step": 0.01,
+      "default": 0.35,
+      "note": "0.35 units/yr is roughly the pace of a fast-warming coastal system read as degrees C per year over a decade. 0 = a stationary environment with seasonality and noise only."
+    },
+    "half_life": {
+      "label": "Memory half-life",
+      "unit": "days",
+      "min": 1,
+      "max": 500,
+      "step": 1,
+      "default": 60,
+      "note": "Time for an induced state to decay halfway back to baseline in the absence of further stress. This is the parameter the Conditioning Atlas constrains best — and only as bounds, never as point estimates. See atlas_evidence below."
+    },
+    "induction_rate": {
+      "label": "Induction rate",
+      "unit": "per day per stress unit",
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.005,
+      "default": 0.12,
+      "note": "How fast memory accumulates while stress exceeds the induction threshold. The atlas rarely resolves this: most studies apply a fixed conditioning dose and measure the outcome later, without a time course during induction."
+    },
+    "threshold": {
+      "label": "Induction threshold",
+      "unit": "stress units",
+      "min": 0.0,
+      "max": 3.0,
+      "step": 0.05,
+      "default": 0.8,
+      "note": "Stress below this does not induce memory. Sublethal-but-suprathreshold conditioning is the atlas's inclusion criterion, so every atlas row sits above its own species' threshold by construction."
+    },
+    "gain": {
+      "label": "Protective gain",
+      "unit": "stress units of tolerance shift per unit of memory",
+      "min": 0.0,
+      "max": 3.0,
+      "step": 0.05,
+      "default": 1.0,
+      "note": "How much the induced state actually shifts the phenotype's optimum. Gain is what makes memory worth having; cost is what makes it dangerous."
+    },
+    "cost": {
+      "label": "Energetic cost of maintaining induction",
+      "unit": "fitness penalty per unit of memory per day (log scale)",
+      "min": 0.0,
+      "max": 0.5,
+      "step": 0.005,
+      "default": 0.06,
+      "note": "Couples to framework Question 7 (energetic cost of plasticity). Set to 0 to make memory free, in which case memory can be useless but never actively harmful — the trap collapses to mere inefficiency."
+    },
+    "tolerance_width": {
+      "label": "Tolerance breadth",
+      "unit": "stress units",
+      "min": 0.2,
+      "max": 5.0,
+      "step": 0.05,
+      "default": 1.5,
+      "note": "Width of the Gaussian performance curve around the prepared-for stress level. Narrow breadth = a specialist that suffers badly from any mismatch."
+    },
+    "noise": {
+      "label": "Environmental noise",
+      "unit": "stress units (SD)",
+      "min": 0.0,
+      "max": 3.0,
+      "step": 0.05,
+      "default": 0.5,
+      "note": "Unpredictable day-to-day variation. Noise is what makes a SHORT memory bad (it chases nothing); trend is what makes a LONG memory bad (it remembers a world that is gone). The interaction of the two is the whole point of the model."
+    },
+    "seasonal_amplitude": {
+      "label": "Seasonal amplitude",
+      "unit": "stress units",
+      "min": 0.0,
+      "max": 5.0,
+      "step": 0.1,
+      "default": 1.5,
+      "note": "Amplitude of an annual sinusoid. Predictable cycling is the case where anticipatory memory should pay off best."
+    },
+    "inheritance": {
+      "label": "Transgenerational transfer",
+      "unit": "fraction of parental memory inherited",
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01,
+      "default": 0.0,
+      "note": "Fraction of the parent's memory state carried into the offspring at each generation boundary. 0 = within-generation memory only. High transfer plus fast environmental change is the intergenerational form of the trap: parents priming offspring for a world that has already moved on."
+    },
+    "generation_days": {
+      "label": "Generation time",
+      "unit": "days",
+      "min": 30,
+      "max": 1460,
+      "step": 10,
+      "default": 365,
+      "note": "Only matters when transgenerational transfer is above zero."
+    },
+    "years": {
+      "label": "Simulation length",
+      "unit": "years",
+      "min": 1,
+      "max": 30,
+      "step": 1,
+      "default": 10,
+      "note": "Longer runs let a slow trend accumulate enough to cross the trap boundary."
+    }
+  },
+
+  "presets": [
+    {
+      "id": "coral_short",
+      "name": "Coral thermal priming — short memory",
+      "anchor_studies": ["Louis_2025a", "Glass_2023", "HazratyKari_2023"],
+      "anchor_note": "Louis et al. 2025 (Pocillopora damicornis, 7 d at +3 C) showed clear protection but the atlas records the induced state as already decaying across the ~8 d gap before challenge; Glass et al. 2023 (Nematostella) and Hazraty-Kari et al. 2023 (Acropora tenuis, gone by 28 d) also decayed. Half-life here is set to the short end of that bracket.",
+      "values": {"trend": 0.35, "half_life": 10, "induction_rate": 0.25, "threshold": 0.8, "gain": 1.2, "cost": 0.05, "tolerance_width": 1.2, "noise": 0.6, "seasonal_amplitude": 2.0, "inheritance": 0.0, "generation_days": 365, "years": 10}
+    },
+    {
+      "id": "coral_long",
+      "name": "Coral thermal priming — long memory",
+      "anchor_studies": ["Drury_2022", "Wong_2021"],
+      "anchor_note": "Drury et al. 2022 (Montipora capitata) held a raised bleaching threshold 124 d after a 5 d pre-exposure; Wong et al. 2021 (Porites astreoides) saw effects across a year-long reciprocal transplant. Same taxon and stressor as the preset above, two orders of magnitude apart in persistence — the atlas genuinely does not resolve which is typical.",
+      "values": {"trend": 0.35, "half_life": 180, "induction_rate": 0.15, "threshold": 0.8, "gain": 1.2, "cost": 0.07, "tolerance_width": 1.2, "noise": 0.6, "seasonal_amplitude": 2.0, "inheritance": 0.0, "generation_days": 365, "years": 10}
+    },
+    {
+      "id": "oyster_immune",
+      "name": "Oyster immune priming",
+      "anchor_studies": ["Lafont_2017a", "Lafont_2017b", "Lafont_2020"],
+      "anchor_note": "Lafont et al. (Crassostrea gigas, single poly(I:C) injection) recorded 89-96% survival at every challenge timepoint out to 126-156 d post-priming, with no detected decay — so the true half-life is a lower bound, not a measurement. Immune priming is the atlas's longest-persisting within-generation memory.",
+      "values": {"trend": 0.2, "half_life": 200, "induction_rate": 0.4, "threshold": 0.5, "gain": 1.6, "cost": 0.09, "tolerance_width": 1.4, "noise": 0.8, "seasonal_amplitude": 1.0, "inheritance": 0.0, "generation_days": 365, "years": 10}
+    },
+    {
+      "id": "oyster_transgen",
+      "name": "Oyster transgenerational pH conditioning",
+      "anchor_studies": ["Parker_2015", "Venkataraman_2019", "Spencer_2020"],
+      "anchor_note": "Parker et al. 2015 (Saccostrea glomerata) carried a pCO2 history across F0-F1-F2 with improved acid-base regulation ~426 d out. Note that Venkataraman et al. 2019 (C. gigas) is scored 'Worsened' in the atlas over a comparable window — transgenerational pH conditioning is not reliably protective, which is exactly the ambiguity this preset is for.",
+      "values": {"trend": 0.25, "half_life": 300, "induction_rate": 0.1, "threshold": 0.6, "gain": 1.1, "cost": 0.08, "tolerance_width": 1.6, "noise": 0.5, "seasonal_amplitude": 1.0, "inheritance": 0.6, "generation_days": 365, "years": 15}
+    },
+    {
+      "id": "urchin_trap",
+      "name": "Urchin multigenerational — an observed trap",
+      "anchor_studies": ["Uthicke_2021", "Uthicke_2024"],
+      "anchor_note": "Uthicke et al. (Echinometra sp. A) held F0 for 18 months and F1 for 25 months under near-future warming plus acidification; the ambient-ambient group ended up 21% larger and 31% faster at righting than every conditioned group. This is the atlas's clearest empirical instance of long-duration conditioning leaving animals worse off. The settings here are the model's attempt at that situation — long-lived state, high maintenance cost, slow generational turnover — and they do land in the trap. Note what it takes to get there: the trend has to be LOW. Push the rate of change above about 0.35 and the trap disappears, which is the model's central and least intuitive claim.",
+      "values": {"trend": 0.1, "half_life": 400, "induction_rate": 0.12, "threshold": 0.5, "gain": 0.7, "cost": 0.22, "tolerance_width": 1.3, "noise": 0.5, "seasonal_amplitude": 2.0, "inheritance": 0.7, "generation_days": 730, "years": 15}
+    },
+    {
+      "id": "stationary",
+      "name": "Stationary world (memory should win)",
+      "anchor_studies": [],
+      "anchor_note": "No directional trend, strong predictable seasonality. This is the control case: if anticipatory memory does not pay off here, something is wrong with the parameters (or the model).",
+      "values": {"trend": 0.0, "half_life": 60, "induction_rate": 0.2, "threshold": 0.8, "gain": 1.3, "cost": 0.04, "tolerance_width": 1.2, "noise": 0.4, "seasonal_amplitude": 2.5, "inheritance": 0.0, "generation_days": 365, "years": 10}
+    }
+  ],
+
+  "atlas_evidence": {
+    "_comment": "Persistence bounds by taxon and stressor from the Conditioning Atlas. CRITICAL: 'Persisted' means the effect was still detectable at the last timepoint tested, so longest_persisted_days is a LOWER bound on memory half-life, not an estimate of it. 'Decayed' means the effect was substantially gone by that timepoint, giving a rough UPPER bound. Most atlas rows tested a single timepoint, so these are censored observations and the true decay curves are almost entirely unmeasured — see README.md, 'What the atlas cannot tell us'.",
+    "groups": {
+      "Bivalve / Multiple": {"n_persisted": 3, "n_decayed": 0, "longest_persisted_days": 455.0, "longest_persisted_study": "Spencer_2020", "earliest_decayed_days": null, "earliest_decayed_study": null},
+      "Bivalve / Pathogen-immune": {"n_persisted": 10, "n_decayed": 0, "longest_persisted_days": 156.0, "longest_persisted_study": "Lafont_2017b", "earliest_decayed_days": null, "earliest_decayed_study": null},
+      "Bivalve / Pollutant": {"n_persisted": 2, "n_decayed": 0, "longest_persisted_days": 365.0, "longest_persisted_study": "SolDourdin_2023", "earliest_decayed_days": null, "earliest_decayed_study": null},
+      "Bivalve / Temperature": {"n_persisted": 2, "n_decayed": 0, "longest_persisted_days": 120.0, "longest_persisted_study": "Lugue_2026", "earliest_decayed_days": null, "earliest_decayed_study": null},
+      "Bivalve / pH-OA": {"n_persisted": 4, "n_decayed": 0, "longest_persisted_days": 426.0, "longest_persisted_study": "Parker_2015", "earliest_decayed_days": null, "earliest_decayed_study": null},
+      "Coral-cnidarian / Temperature": {"n_persisted": 8, "n_decayed": 4, "longest_persisted_days": 365.0, "longest_persisted_study": "Wong_2021", "earliest_decayed_days": 8.0, "earliest_decayed_study": "Glass_2023"},
+      "Crustacean / Pathogen-immune": {"n_persisted": 4, "n_decayed": 1, "longest_persisted_days": 7.0, "longest_persisted_study": "Zhao_2024", "earliest_decayed_days": 7.0, "earliest_decayed_study": "Lin_2025"},
+      "Echinoderm / Multiple": {"n_persisted": 0, "n_decayed": 1, "longest_persisted_days": null, "longest_persisted_study": null, "earliest_decayed_days": 270.0, "earliest_decayed_study": "Uthicke_2021"},
+      "Polychaete-other / Pollutant": {"n_persisted": 1, "n_decayed": 1, "longest_persisted_days": 42.0, "longest_persisted_study": "Neylan_2022", "earliest_decayed_days": 49.0, "earliest_decayed_study": "Marshall_2008"}
+    }
+  },
+
+  "observed_trap_instances": {
+    "_comment": "Atlas rows scored direction='Worsened': experiments where conditioning left animals measurably worse off than unconditioned controls. 14 of 109 rows (13%). These are the empirical footprint of the trap this simulator models — the model does not need to be believed for these to be real.",
+    "count": 14,
+    "total_rows": 109,
+    "studies": [
+      {"study_id": "Mackenzie_2022", "taxon": "Bivalve", "stressor": "pH/OA", "species": "Crassostrea gigas"},
+      {"study_id": "Xu_2024", "taxon": "Bivalve", "stressor": "pH/OA", "species": "Ruditapes philippinarum"},
+      {"study_id": "Venkataraman_2019", "taxon": "Bivalve", "stressor": "pH/OA", "species": "Crassostrea gigas"},
+      {"study_id": "Waite_2021", "taxon": "Bivalve", "stressor": "Temperature", "species": "Mytilus californianus"},
+      {"study_id": "Klepac_2020a", "taxon": "Coral/cnidarian", "stressor": "Temperature", "species": "Porites lobata"},
+      {"study_id": "McRae_2021", "taxon": "Coral/cnidarian", "stressor": "Temperature", "species": "Pocillopora damicornis"},
+      {"study_id": "Robinson_2020", "taxon": "Bivalve", "stressor": "Pathogen/immune", "species": "Crassostrea gigas"},
+      {"study_id": "SolDourdin_2024", "taxon": "Bivalve", "stressor": "Pollutant", "species": "Crassostrea gigas"},
+      {"study_id": "Uthicke_2021", "taxon": "Echinoderm", "stressor": "Multiple", "species": "Echinometra sp. A"},
+      {"study_id": "Uthicke_2024", "taxon": "Echinoderm", "stressor": "Multiple", "species": "Echinometra sp. A"},
+      {"study_id": "Zhao_2018", "taxon": "Echinoderm", "stressor": "Temperature", "species": "Strongylocentrotus intermedius"},
+      {"study_id": "Neylan_2022", "taxon": "Polychaete/other", "stressor": "Pollutant", "species": "Bugula neritina"},
+      {"study_id": "NgKeough_2003", "taxon": "Polychaete/other", "stressor": "Pollutant", "species": "Watersipora subtorquata"},
+      {"study_id": "Lee_2023", "taxon": "Crustacean", "stressor": "Multiple", "species": "Tigriopus japonicus"}
+    ]
+  }
+}
