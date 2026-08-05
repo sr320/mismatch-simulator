@@ -28,7 +28,7 @@ sys.path.insert(0, ROOT)
 
 from model.mismatch import DEFAULTS, simulate  # noqa: E402
 
-BUILT = os.path.join(ROOT, "Mismatch_Simulator.html")
+BUILT = os.path.join(ROOT, "index.html")
 CHROMIUM = "/opt/pw-browsers/chromium"
 
 # Absolute tolerance for a summary statistic. The two implementations do the

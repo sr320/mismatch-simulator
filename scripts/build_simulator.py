@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Build Mismatch_Simulator.html from simulator_template.html + data/parameters.json.
+Build index.html from simulator_template.html + data/parameters.json.
 
 simulator_template.html is the real source (edit layout, styling, the JS
 model, and the charts there). Never hand-edit the generated file — it is
@@ -26,7 +26,7 @@ def main():
         raise SystemExit("simulator_template.html is missing its __DATA__ placeholder")
 
     html = tpl.replace("__DATA__", json.dumps(config, separators=(",", ":")))
-    out = os.path.join(ROOT, "Mismatch_Simulator.html")
+    out = os.path.join(ROOT, "index.html")
     with open(out, "w") as fh:
         fh.write(html)
 

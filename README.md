@@ -6,7 +6,7 @@ Lab conceptual framework's unresolved Question 8:
 > **Q8 — Mismatch threshold.** At what rate of environmental change does
 > anticipatory memory tip from adaptive to maladaptive?
 
-Open `Mismatch_Simulator.html` in any browser. Move the sliders. The
+Open `index.html` in any browser. Move the sliders. The
 question becomes something you can push on rather than something you can
 only restate.
 
@@ -100,7 +100,7 @@ model rather than out of intuition.
 | `model/mismatch.py` | Reference implementation: `simulate`, `advantage`, `find_trap_threshold`, `phase_sweep`. Standard library only. **This is the authority.** | Yes |
 | `tests/test_mismatch.py` | 30 tests: integrator correctness, PRNG, half-life semantics, null-model identities, and the structural findings above pinned as assertions. | Yes |
 | `simulator_template.html` | The real source for the interactive artifact — layout, styling, charts, and the JavaScript copy of the model. | Yes |
-| `Mismatch_Simulator.html` | The self-contained built artifact. | **No — generated** |
+| `index.html` | The self-contained built artifact. | **No — generated** |
 | `scripts/build_simulator.py` | Injects `data/parameters.json` into the template. | Yes |
 | `scripts/crossvalidate_js.py` | Runs the built artifact's real JavaScript in headless Chromium and compares it against `model/mismatch.py` over 36 parameter/seed combinations. Fails on any divergence. | Yes |
 | `scripts/atlas_signal_check.py` | Reproduces the atlas confound analysis above. | Yes |
@@ -203,9 +203,9 @@ studies are precisely what would change that answer.
    - `scripts/build_simulator.py` then `scripts/crossvalidate_js.py`, so JS
      and Python can never diverge on `main`. This needs node + playwright in
      the CI image and is the single most valuable check in the repo.
-   - Optionally publish `Mismatch_Simulator.html` to GitHub Pages on merge,
+   - Optionally publish `index.html` to GitHub Pages on merge,
      so the artifact has a stable URL to share.
-5. Decide whether `Mismatch_Simulator.html` is committed or built. Committing
+5. Decide whether `index.html` is committed or built. Committing
    it means anyone can open the artifact straight from the repo without a
    toolchain; the cost is a large diff on every rebuild. Given that the
    artifact *is* the deliverable here, committing it is probably right —
