@@ -1,5 +1,5 @@
 {
-  "_comment": "Parameter ranges and preset scenarios for the Mismatch Simulator. Persistence anchors are derived from the Conditioning Atlas (109 extracted experiments; see ../README.md for the provenance chain). Generated once by hand from atlas/merged.json and then maintained here — see scripts/refresh_atlas_anchors.py to recompute the evidence block.",
+  "_comment": "Parameter ranges and preset scenarios for the Mismatch Simulator. Persistence anchors are derived from the Conditioning Atlas (109 extracted experiments; see README.md for the provenance chain). Generated once by hand from atlas/merged.json and then maintained here.",
   "units": {
     "time": "days",
     "stress": "stress units; for thermal scenarios read 1 unit = 1 degree C above the local baseline"

@@ -18,10 +18,6 @@ to sharpen the question and generate testable predictions. No number it
 produces should appear in a manuscript as a result. `MODEL.md` states every
 equation and every assumption.
 
-This directory is a **future standalone git repository**, same pattern as
-the Conditioning Atlas, Framework Sentinel, and Held-Out Prediction Rig. See
-["Becoming its own repo"](#becoming-its-own-repo).
-
 ---
 
 ## What the model actually says
@@ -110,6 +106,8 @@ model rather than out of intuition.
 
 ```bash
 pip install -r requirements.txt --break-system-packages   # pytest + scipy only
+npm ci                                                    # browser driver for cross-validation
+npx playwright install chromium                           # Chromium for cross-validation
 python3 -m pytest tests/ -q                # 30 tests
 python3 scripts/build_simulator.py         # regenerate the artifact
 python3 scripts/crossvalidate_js.py        # verify JS == Python  (needs node + playwright)
@@ -140,6 +138,11 @@ draws are identical.
 thing standing between the artifact and silent divergence.
 
 ## Maintenance
+
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) before changing the model. In
+particular, read `MODEL.md` and ["Why there are two implementations of the
+model"](#why-there-are-two-implementations-of-the-model) before editing
+either implementation.
 
 ### Changing the model
 
@@ -189,27 +192,3 @@ studies are precisely what would change that answer.
   literature, structured), **Framework Sentinel** (weekly scoring of new
   literature against all ten framework questions), **Held-Out Prediction
   Rig** (Question 10).
-
-## Becoming its own repo
-
-1. `git init`; `.gitignore` already covers `__pycache__/`, `*.pyc`, and
-   `.pytest_cache/`.
-2. First commit suggestion:
-   `Initial import: mismatch model, 30 tests, JS/Python cross-validation, interactive artifact`.
-3. Add a `LICENSE` — MIT or Apache-2.0 suits this one, since the substance is
-   code rather than data; confirm with the lab.
-4. CI worth having, in order of value:
-   - `pytest tests/` on every push.
-   - `scripts/build_simulator.py` then `scripts/crossvalidate_js.py`, so JS
-     and Python can never diverge on `main`. This needs node + playwright in
-     the CI image and is the single most valuable check in the repo.
-   - Optionally publish `index.html` to GitHub Pages on merge,
-     so the artifact has a stable URL to share.
-5. Decide whether `index.html` is committed or built. Committing
-   it means anyone can open the artifact straight from the repo without a
-   toolchain; the cost is a large diff on every rebuild. Given that the
-   artifact *is* the deliverable here, committing it is probably right —
-   just regenerate it as its own commit rather than folding it into an
-   unrelated change.
-6. Point new contributors at `MODEL.md` and this README's "Why there are two
-   implementations" section before they touch either copy of the model.

@@ -29,7 +29,9 @@ sys.path.insert(0, ROOT)
 from model.mismatch import DEFAULTS, simulate  # noqa: E402
 
 BUILT = os.path.join(ROOT, "index.html")
-CHROMIUM = "/opt/pw-browsers/chromium"
+CHROMIUM = os.environ.get("PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH")
+if not CHROMIUM and os.path.exists("/opt/pw-browsers/chromium"):
+    CHROMIUM = "/opt/pw-browsers/chromium"
 
 # Absolute tolerance for a summary statistic. The two implementations do the
 # same IEEE-754 double operations in the same order, so agreement should be
@@ -83,7 +85,8 @@ const { chromium } = require('playwright');
 const fs = require('fs');
 (async () => {
   const jobs = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
-  const browser = await chromium.launch({ executablePath: %CHROMIUM% });
+  const executablePath = %CHROMIUM%;
+  const browser = await chromium.launch(executablePath ? { executablePath } : {});
   const page = await browser.newPage();
   const errors = [];
   page.on('pageerror', e => errors.push(String(e)));
@@ -124,8 +127,15 @@ def main():
             fh.write(RUNNER.replace("%CHROMIUM%", json.dumps(CHROMIUM))
                            .replace("%BUILT%", BUILT))
 
+        env = os.environ.copy()
+        node_path = os.path.join(ROOT, "node_modules")
+        if env.get("NODE_PATH"):
+            node_path = os.pathsep.join((node_path, env["NODE_PATH"]))
+        env["NODE_PATH"] = node_path
+
         proc = subprocess.run(["node", runner_path, jobs_path, out_path],
-                              capture_output=True, text=True, cwd=ROOT)
+                              capture_output=True, text=True, cwd=ROOT,
+                              env=env)
         if proc.returncode != 0:
             print("Headless browser run failed:")
             print(proc.stdout)

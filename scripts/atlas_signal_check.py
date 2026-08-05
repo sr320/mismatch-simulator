@@ -11,7 +11,7 @@ conditioning left animals WORSE off. The Conditioning Atlas scores each row's
 Result (2026-08-05): the raw association is present and nominally
 significant, but it is CONFOUNDED by study design and does not survive
 stratification. This script exists so that conclusion is reproducible rather
-than asserted. See ../README.md, "Does the atlas support the model?".
+than asserted. See README.md, "Does the atlas support the model?".
 
 Usage:
     python3 scripts/atlas_signal_check.py [path/to/atlas/merged.json]
